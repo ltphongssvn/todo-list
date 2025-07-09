@@ -7,6 +7,9 @@ function App() {
         {id: 3, title: "code out app"},
     ]
 
+    // Add this line to test ESLint
+    const testVariable = "This variable is never used"
+
     return (
         <div>
             <h1>Todo List</h1>
