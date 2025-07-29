@@ -7,7 +7,15 @@ import TodoList from './TodoList'
 
 function App() {
     const [count, setCount] = useState(0)
-    const [newTodo, setNewTodo] = useState('Example new todo')
+    const [todoList, setTodoList] = useState([])
+
+    const addTodo = (title) => {
+        const newTodo = {
+            title: title,
+            id: Date.now()
+        }
+        setTodoList([...todoList, newTodo])
+    }
 
     return (
         <>
@@ -20,9 +28,8 @@ function App() {
                 </a>
             </div>
             <h1>Vite + React</h1>
-            <TodoForm />
-            <p>{newTodo}</p>
-            <TodoList />
+            <TodoForm onAddTodo={addTodo} />
+            <TodoList todoList={todoList} />
             <div className="card">
                 <button onClick={() => setCount((count) => count + 1)}>
                     count is {count}
