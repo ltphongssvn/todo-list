@@ -1,7 +1,16 @@
-// src/TodoListItem.jsx
-function TodoListItem({ todo }) {
+// /home/lenovo/code/ltphongssvn/kiwi/todo-list/src/TodoListItem.jsx
+function TodoListItem({ todo, onCompleteTodo }) {
     return (
-        <li>{todo.title}</li>
+        <li>
+            <form>
+                <input
+                    type="checkbox"
+                    checked={todo.isCompleted}
+                    onChange={() => onCompleteTodo(todo.id)}
+                />
+                {todo.title}
+            </form>
+        </li>
     );
 }
 
