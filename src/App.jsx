@@ -29,6 +29,16 @@ function App() {
         setTodoList(updatedTodos);
     }
 
+    const updateTodo = (editedTodo) => {
+        const updatedTodos = todoList.map((todo) => {
+            if (todo.id === editedTodo.id) {
+                return editedTodo;
+            }
+            return todo;
+        });
+        setTodoList(updatedTodos);
+    }
+
     return (
         <>
             <div>
@@ -41,7 +51,7 @@ function App() {
             </div>
             <h1>Vite + React</h1>
             <TodoForm onAddTodo={addTodo} />
-            <TodoList todoList={todoList} onCompleteTodo={completeTodo} />
+            <TodoList todoList={todoList} onCompleteTodo={completeTodo} onUpdateTodo={updateTodo} />
             <div className="card">
                 <button onClick={() => setCount((count) => count + 1)}>
                     count is {count}
