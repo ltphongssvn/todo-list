@@ -1,7 +1,7 @@
-// /home/lenovo/code/ltphongssvn/kiwi/todo-list/src/TodoList.jsx
+// /home/lenovo/code/ltphongssvn/kiwi/todo-list/src/features/TodoList/TodoList.jsx
 import TodoListItem from './TodoListItem';
 
-function TodoList({ todoList, onCompleteTodo }) {
+function TodoList({ todoList, onCompleteTodo, onUpdateTodo }) {
     const filteredTodoList = todoList.filter(todo => !todo.isCompleted);
 
     return (
@@ -14,6 +14,7 @@ function TodoList({ todoList, onCompleteTodo }) {
                         key={todo.id}
                         todo={todo}
                         onCompleteTodo={onCompleteTodo}
+                        onUpdateTodo={onUpdateTodo}
                     />
                 ))}
             </ul>
