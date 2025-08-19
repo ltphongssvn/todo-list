@@ -23,5 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 
-# Claude Code guidance file - NEVER commit
+# Claude Code guidance files - NEVER commit
 CLAUDE.md
+.claude/
+*.claude*
+claude.*
+*claude*
