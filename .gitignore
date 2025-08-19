@@ -23,5 +23,3 @@ dist-ssr
 *.sln
 *.sw?
 
-# Claude Code guidance file - NEVER commit
-CLAUDE.md
