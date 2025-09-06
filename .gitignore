@@ -15,10 +15,21 @@ dist-ssr
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
-.idea
 .DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# Security - Never track these prohibited directories
+.github/webhooks/
+.idea/
+.claude/
+*.env
+*.key
+*.pem
+
+# Development tools - keep out of version control
+*.swp
+*.swo
