@@ -1,10 +1,14 @@
 // /home/lenovo/code/ltphongssvn/kiwi/todo-list/src/features/TodoList/TodoListItem.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import TextInputWithLabel from '../../shared/TextInputWithLabel';
 
-function TodoListItem({ todo, onCompleteTodo, onUpdateTodo }) {
+function TodoListItem({ todo, onCompleteTodo, onUpdateTodo, onDeleteTodo }) {
     const [isEditing, setIsEditing] = useState(false);
     const [workingTitle, setWorkingTitle] = useState(todo.title);
+
+    useEffect(() => {
+          setWorkingTitle(todo.title);
+      }, [todo]);
 
     const handleCancel = () => {
         setWorkingTitle(todo.title);
@@ -24,6 +28,12 @@ function TodoListItem({ todo, onCompleteTodo, onUpdateTodo }) {
             title: workingTitle
         });
         setIsEditing(false);
+    };
+
+    const handleDelete = () => {
+        if (window.confirm('Are you sure you want to delete this todo?')) {
+            onDeleteTodo(todo.id);
+        }
     };
 
     return (
@@ -55,6 +65,9 @@ function TodoListItem({ todo, onCompleteTodo, onUpdateTodo }) {
                             />
                         </label>
                         <span onClick={() => setIsEditing(true)}>{todo.title}</span>
+                        <button type="button" onClick={handleDelete} style={{marginLeft: '10px'}}>
+                            Delete
+                        </button>
                     </>
                 )}
             </form>
