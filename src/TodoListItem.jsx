@@ -1,17 +1,8 @@
-// /home/lenovo/code/ltphongssvn/kiwi/todo-list/src/TodoListItem.jsx
-function TodoListItem({ todo, onCompleteTodo }) {
+// src/TodoListItem.jsx
+function TodoListItem({ todo }) {
     return (
-        <li>
-            <form>
-                <input
-                    type="checkbox"
-                    checked={todo.isCompleted}
-                    onChange={() => onCompleteTodo(todo.id)}
-                />
-                {todo.title}
-            </form>
-        </li>
-    );
+        <li>{todo.title}</li>
+    )
 }
 
-export default TodoListItem;
+export default TodoListItem

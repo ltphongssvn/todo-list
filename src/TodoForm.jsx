@@ -1,4 +1,4 @@
-// /home/lenovo/code/ltphongssvn/kiwi/todo-list/src/TodoForm.jsx
+// src/TodoForm.jsx
 import { useState } from 'react'
 
 function TodoForm({ onAddTodo }) {
@@ -24,7 +24,7 @@ function TodoForm({ onAddTodo }) {
                 Add Todo
             </button>
         </form>
-    );
+    )
 }
 
-export default TodoForm;
+export default TodoForm
