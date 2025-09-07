@@ -18,7 +18,7 @@ function TodoForm({ onAddTodo }) {
             <input id="todoTitle" name="title" type="text" ref={todoTitleInput} />
             <button type="submit">Add Todo</button>
         </form>
-    );
+    )
 }
 
-export default TodoForm;
+export default TodoForm

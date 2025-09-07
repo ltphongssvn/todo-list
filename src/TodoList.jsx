@@ -1,5 +1,5 @@
 // src/TodoList.jsx
-import TodoListItem from './TodoListItem';
+import TodoListItem from './TodoListItem'
 
 function TodoList({ todoList }) {
     return (
@@ -8,6 +8,7 @@ function TodoList({ todoList }) {
                 <TodoListItem key={todo.id} todo={todo} />
             ))}
         </ul>
-    );
+    )
 }
-export default TodoList;
+
+export default TodoList
