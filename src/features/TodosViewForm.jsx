@@ -1,60 +1,104 @@
-// src/features/TodosViewForm.jsx
-import { useState, useEffect } from 'react'
-import TextInputWithLabel from '../shared/TextInputWithLabel'
+// src/features/TodosViewForm.jsx - TodosViewForm component with styled-components
+import styled from 'styled-components';
+import TextInputWithLabel from '../shared/TextInputWithLabel';
 
-const TodosViewForm = ({ queryString, setQueryString, sortDirection, toggleSortDirection }) => {
-    // Week 9: Local state for debouncing the search input
-    // This holds the immediate value as the user types
-    const [localQueryString, setLocalQueryString] = useState(queryString);
+// Styled components for the view form
+const StyledViewForm = styled.div`
+  /* Adding padding to form items as required */
+  display: flex;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  align-items: flex-end;
+`;
 
-    // Week 9: Debouncing implementation with useEffect
-    // This effect watches localQueryString and delays updating the parent's queryString
-    // until the user stops typing for 500ms
-    useEffect(() => {
-        // Create a timeout that will fire after 500ms of no typing
-        const debounce = setTimeout(() => {
-            // After 500ms of no changes, update the parent component's state
-            // This triggers the actual API call in App.jsx
-            setQueryString(localQueryString);
-        }, 500); // 500ms delay - balances responsiveness with API efficiency
+const StyledFormGroup = styled.div`
+  /* Small padding for spacing as required */
+  padding: 0.25rem 0;
+  flex: 1;
+`;
 
-        // Cleanup function: This runs before the effect runs again
-        // If the user types again within 500ms, this cancels the previous timeout
-        // preventing the API call from happening
-        return () => {
-            clearTimeout(debounce);
-        };
-    }, [localQueryString, setQueryString]); // Re-run this effect whenever localQueryString changes
+const StyledLabel = styled.label`
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: #4a5568;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+`;
 
-    // Handle the Clear button click
-    const handleClear = () => {
-        // Clear both the local state and the parent's state immediately
-        setLocalQueryString("");
-        setQueryString(""); // For Clear button, we update immediately without debouncing
-    };
+const StyledSelect = styled.select`
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background-color: white;
+  font-size: 1rem;
+  color: #2d3748;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+  
+  &:hover {
+    border-color: #cbd5e0;
+  }
+`;
 
+const StyledSearchWrapper = styled.div`
+  flex: 2;
+  /* Small padding for spacing as required */
+  padding: 0.25rem 0;
+`;
+
+function TodosViewForm({ filterOption, sortOption, onFilterChange, onSortChange, searchTerm, onSearchChange }) {
     return (
-        <div>
-            <div>
-                {/* Week 9: Search input now uses local state for immediate UI updates */}
-                <TextInputWithLabel
-                    id="search"
-                    label="Search"
-                    name="search"
-                    type="text"
-                    value={localQueryString}
-                    onChange={(e) => setLocalQueryString(e.target.value)}
-                    placeholder="Search todos..."
-                />
-                <button onClick={handleClear}>Clear</button>
-            </div>
-            <div>
-                <button onClick={toggleSortDirection}>
-                    Sort {sortDirection === "asc" ? "↑" : "↓"}
-                </button>
-            </div>
-        </div>
+        <StyledViewForm>
+            {onSearchChange && (
+                <StyledSearchWrapper>
+                    <TextInputWithLabel
+                        elementId="search-todos"
+                        label="Search Todos"
+                        value={searchTerm || ''}
+                        onChange={(e) => onSearchChange(e.target.value)}
+                    />
+                </StyledSearchWrapper>
+            )}
+
+            <StyledFormGroup>
+                <StyledLabel htmlFor="filter-select">Filter By</StyledLabel>
+                <StyledSelect
+                    id="filter-select"
+                    value={filterOption}
+                    onChange={(e) => onFilterChange(e.target.value)}
+                >
+                    <option value="all">All Todos</option>
+                    <option value="active">Active</option>
+                    <option value="completed">Completed</option>
+                </StyledSelect>
+            </StyledFormGroup>
+
+            <StyledFormGroup>
+                <StyledLabel htmlFor="sort-select">Sort By</StyledLabel>
+                <StyledSelect
+                    id="sort-select"
+                    value={sortOption}
+                    onChange={(e) => onSortChange(e.target.value)}
+                >
+                    <option value="createdDate">Date Created</option>
+                    <option value="title">Title</option>
+                    <option value="completed">Status</option>
+                </StyledSelect>
+            </StyledFormGroup>
+        </StyledViewForm>
     );
-};
+}
 
 export default TodosViewForm;

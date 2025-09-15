@@ -1,231 +1,176 @@
-// src/App.jsx
-import { useState, useEffect, useCallback } from 'react'
-import './App.css'
-import TodoForm from './features/TodoForm'
-import TodoList from './features/TodoList/TodoList'
-import TodosViewForm from './features/TodosViewForm'
+// src/App.jsx - Main App component with CSS Module implementation
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import styles from './App.module.css';
+import { ErrorIcon } from './shared/Icons';
+import './App.css'; // Foundation styles
+import TodoList from './features/TodoList/TodoList';
+import TodoForm from './features/TodoForm';
+import TodosViewForm from './features/TodosViewForm';
 
 function App() {
-    const [todoList, setTodoList] = useState([])
-    const [isLoading, setIsLoading] = useState(false)
-    const [errorMessage, setErrorMessage] = useState("")
-    const [isSaving, setIsSaving] = useState(false)
+    const [todos, setTodos] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [filterOption, setFilterOption] = useState('all');
+    const [sortOption, setSortOption] = useState('createdDate');
 
-    // Sorting state
-    const [sortField, setSortField] = useState("createdTime")
-    const [sortDirection, setSortDirection] = useState("desc")
-    const [queryString, setQueryString] = useState("")
-
-    // Week 9: useCallback implementation for encodeUrl
-    // This function is memoized to prevent recreation on every render
-    // It directly accesses sortField, sortDirection, and queryString from the component's state
-    const encodeUrl = useCallback(() => {
-        let sortQuery = `sort[0][field]=${sortField}&sort[0][direction]=${sortDirection}`;
-        let searchQuery = "";
-        if (queryString) {
-            searchQuery = `&filterByFormula=SEARCH("${queryString}",title)`;
-        }
-        return encodeURI(`https://api.airtable.com/v0/${import.meta.env.VITE_BASE_ID}/${import.meta.env.VITE_TABLE_NAME}?${sortQuery}${searchQuery}`);
-    }, [sortField, sortDirection, queryString]); // Dependencies array - function recreates only when these change
-
-    const url = `https://api.airtable.com/v0/${import.meta.env.VITE_BASE_ID}/${import.meta.env.VITE_TABLE_NAME}`;
-    const token = `Bearer ${import.meta.env.VITE_PAT}`;
-
+    // Fetch todos on mount
     useEffect(() => {
         const fetchTodos = async () => {
-            setIsLoading(true);
-            const options = {
-                method: 'GET',
-                headers: {
-                    Authorization: token
-                }
-            };
-
             try {
-                // Week 9: Call encodeUrl without arguments - it accesses state directly
-                const resp = await fetch(encodeUrl(), options);
-                if(!resp.ok){
-                    const message = `Error has ocurred: ${resp.status}`;
-                    throw new Error(message);
+                setIsLoading(true);
+                setError(null);
+                const response = await fetch(`${import.meta.env.VITE_API_URL}`, {
+                method: "GET",
+                headers: {
+                    "Authorization": `Bearer ${import.meta.env.VITE_PAT}`
                 }
-                const output = await resp.json();
-                const todos = output.records.map(({id, fields}) => ({
-                    id: id,
-                    title: fields.title
+            });
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch todos: ${response.status}`);
+                }
+                const data = await response.json();
+                const todos = data.records.map(record => ({
+                    id: record.id,
+                    title: record.fields.title || "",
+                    completed: record.fields.isCompleted || false
                 }));
-                setTodoList(todos);
+                setTodos(todos);
+            } catch (err) {
+                setError(err.message);
+            } finally {
                 setIsLoading(false);
-            } catch(error) {
-                setErrorMessage(error.message);
-                setIsLoading(false)
             }
         };
+
         fetchTodos();
-    }, [sortField, sortDirection, queryString, token]);
+    }, []);
 
-    const addTodoOnSave = async (id, inputValue) => {
-        setIsSaving(true);
-        const airtableObject = {
-            "records" : [
-                {
-                    "id": id,
-                    "fields": {
-                        "title": inputValue
-                    }
-                }
-            ]
-        };
-        const options = {
-            method: 'PATCH',
-            headers: {
-                "Content-Type": 'application/json',
-                Authorization: token
-            },
-            body: JSON.stringify(airtableObject)
-        };
-
+    // Add new todo
+    const addTodo = useCallback(async (title) => {
         try {
-            // Week 9: Call encodeUrl without arguments
-            const resp = await fetch(encodeUrl(), options);
-            if(!resp.ok){
-                const message = `Error has ocurred: ${resp.status}`;
-                throw new Error(message);
-            }
-            const output = await resp.json();
-            const updatedItem = {
-                id: output.records[0].id,
-                title: output.records[0].fields.title
-            };
-            const updatedList = todoList.map(item => {
-                return item.id === id ? updatedItem : item;
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/todos`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ title, completed: false }),
             });
-            setTodoList(updatedList);
-            setIsSaving(false);
-        } catch(error) {
-            setErrorMessage(error.message);
-            setIsSaving(false);
+
+            if (!response.ok) {
+                throw new Error('Failed to add todo');
+            }
+
+            const newTodo = await response.json();
+            setTodos(prevTodos => [...prevTodos, newTodo]);
+        } catch (err) {
+            setError(err.message);
         }
-    };
+    }, []);
 
-    const addTodo = async (inputValue) => {
-        setIsSaving(true);
-        const airtableObject = {
-            "records" : [
-                {
-                    "fields": {
-                        "title": inputValue
-                    }
-                }
-            ]
-        };
-        const options = {
-            method: 'POST',
-            headers: {
-                "Content-Type": 'application/json',
-                Authorization: token
-            },
-            body: JSON.stringify(airtableObject)
-        };
-
+    // Update todo
+    const updateTodo = useCallback(async (id, updates) => {
         try {
-            // Week 9: Call encodeUrl without arguments
-            const resp = await fetch(encodeUrl(), options);
-            if(!resp.ok){
-                const message = `Error has ocurred: ${resp.status}`;
-                throw new Error(message);
-            }
-            const output = await resp.json();
-            const todo = {
-                id: output.records[0].id,
-                title: output.records[0].fields.title
-            };
-            const updatedList = [...todoList, todo];
-            setTodoList(updatedList);
-            setIsSaving(false);
-        } catch(error) {
-            setErrorMessage(error.message);
-            setIsSaving(false);
-        }
-    };
-
-    const deleteTodo = async (id) => {
-        const options = {
-            method: 'DELETE',
-            headers: {
-                Authorization: token
-            }
-        };
-        const urlDelete = `${url}/${id}`;
-
-        try {
-            const resp = await fetch(urlDelete, options);
-            if(!resp.ok){
-                const message = `Error has ocurred: ${resp.status}`;
-                throw new Error(message);
-            }
-            const modifiedList = todoList.filter(item => id !== item.id);
-            setTodoList(modifiedList);
-        } catch(error) {
-            setErrorMessage(error.message);
-        }
-    };
-
-    const cancelEdit = async (id) => {
-        const options = {
-            method: 'GET',
-            headers: {
-                Authorization: token
-            }
-        };
-        const urlWithRecord = `${url}/${id}`;
-
-        try {
-            // Week 9: Call encodeUrl without arguments
-            const resp = await fetch(encodeUrl(), options);
-            if(!resp.ok){
-                const message = `Error has ocurred: ${resp.status}`;
-                throw new Error(message);
-            }
-            const output = await resp.json();
-            const originalItem = {
-                id: output.id,
-                title: output.fields.title
-            };
-            const updatedList = todoList.map(item => {
-                return item.id === id ? originalItem : item;
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/todos/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(updates),
             });
-            setTodoList(updatedList);
-        } catch(error) {
-            setErrorMessage(error.message);
-        }
-    };
 
-    const toggleSortDirection = () => {
-        setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    };
+            if (!response.ok) {
+                throw new Error('Failed to update todo');
+            }
+
+            const updatedTodo = await response.json();
+            setTodos(prevTodos =>
+                prevTodos.map(todo => todo.id === id ? updatedTodo : todo)
+            );
+        } catch (err) {
+            setError(err.message);
+        }
+    }, []);
+
+    // Delete todo
+    const deleteTodo = useCallback(async (id) => {
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/todos/${id}`, {
+                method: 'DELETE',
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete todo');
+            }
+
+            setTodos(prevTodos => prevTodos.filter(todo => todo.id !== id));
+        } catch (err) {
+            setError(err.message);
+        }
+    }, []);
+
+    // Filter and sort todos
+    const processedTodos = useMemo(() => {
+        let filtered = [...todos];
+
+        // Apply filter
+        if (filterOption === 'completed') {
+            filtered = filtered.filter(todo => todo.completed);
+        } else if (filterOption === 'active') {
+            filtered = filtered.filter(todo => !todo.completed);
+        }
+
+        // Apply sort
+        filtered.sort((a, b) => {
+            if (sortOption === 'title') {
+                return a.title.localeCompare(b.title);
+            } else if (sortOption === 'completed') {
+                return a.completed === b.completed ? 0 : a.completed ? 1 : -1;
+            }
+            // Default: sort by creation date
+            return new Date(b.createdAt) - new Date(a.createdAt);
+        });
+
+        return filtered;
+    }, [todos, filterOption, sortOption]);
 
     return (
-        <>
-            <h1>Todo List</h1>
-            {isLoading && <h2>Loading...</h2>}
-            {isSaving && <h2>Saving...</h2>}
-            {errorMessage && <h2>{errorMessage}</h2>}
-            <TodosViewForm
-                queryString={queryString}
-                setQueryString={setQueryString}
-                sortDirection={sortDirection}
-                toggleSortDirection={toggleSortDirection}
-            />
-            <TodoForm addTodo={addTodo} isSaving={isSaving} />
-            <TodoList
-                todoList={todoList}
-                addTodoOnSave={addTodoOnSave}
-                deleteTodo={deleteTodo}
-                cancelEdit={cancelEdit}
-                isSaving={isSaving}
-            />
-        </>
+        <div className={styles.appContainer}>
+            <div className={styles.headerSection}>
+                <h1>My Todo List</h1>
+            </div>
+
+            {error && (
+                <div className={styles.errorContainer}>
+                    <ErrorIcon className={styles.errorIcon} />
+                    <span className={styles.errorMessage}>{error}</span>
+                </div>
+            )}
+
+            <div className={styles.mainContent}>
+                <TodoForm onAddTodo={addTodo} />
+
+                <TodosViewForm
+                    filterOption={filterOption}
+                    sortOption={sortOption}
+                    onFilterChange={setFilterOption}
+                    onSortChange={setSortOption}
+                />
+
+                {isLoading ? (
+                    <div className={styles.loadingContainer}>
+                        <span>Loading todos...</span>
+                    </div>
+                ) : (
+                    <TodoList
+                        todos={processedTodos}
+                        onUpdateTodo={updateTodo}
+                        onDeleteTodo={deleteTodo}
+                    />
+                )}
+            </div>
+        </div>
     );
 }
 
-export default App
+export default App;
