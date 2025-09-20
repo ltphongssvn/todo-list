@@ -1,27 +1,38 @@
-// /home/lenovo/code/ltphongssvn/kiwi/todo-list/src/features/TodoList/TodoList.jsx
+// src/features/TodoList/TodoList.jsx - TodoList component with CSS Module
+import styles from './TodoList.module.css';
 import TodoListItem from './TodoListItem';
 
-function TodoList({ todoList, onCompleteTodo, onUpdateTodo, onDeleteTodo, isLoading }) {
-    const filteredTodoList = todoList.filter(todo => !todo.isCompleted);
+function TodoList({ todos, onUpdateTodo, onDeleteTodo }) {
+    if (!todos || todos.length === 0) {
+        return (
+            <div className={styles.todoListContainer}>
+                <div className={styles.emptyState}>
+                    No todos yet. Add one above to get started!
+                </div>
+            </div>
+        );
+    }
 
     return (
-          isLoading ? (
-              <p>Todo list loading...</p>
-          ) : filteredTodoList.length === 0 ? (
-              <p>Add todo above to get started</p>
-          ) : (
-            <ul>
-                {filteredTodoList.map(todo => (
+        <div className={styles.todoListContainer}>
+            <div className={styles.listHeader}>
+                <h3>Your Tasks</h3>
+                <span className={styles.todoCount}>
+          {todos.filter(t => !t.completed).length} of {todos.length} remaining
+        </span>
+            </div>
+            <ul className={styles.todoList}>
+                {todos.map(todo => (
                     <TodoListItem
                         key={todo.id}
                         todo={todo}
-                        onCompleteTodo={onCompleteTodo}
-                        onUpdateTodo={onUpdateTodo}
-                        onDeleteTodo={onDeleteTodo}
+                        onUpdate={onUpdateTodo}
+                        onDelete={onDeleteTodo}
                     />
                 ))}
             </ul>
-        )
+        </div>
     );
 }
+
 export default TodoList;

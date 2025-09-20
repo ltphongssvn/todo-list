@@ -1,0 +1,36 @@
+/* src/features/TodoList/TodoList.module.css - CSS Module for TodoList component */
+
+.todoListContainer {
+    width: 100%;
+    margin-top: 1rem;
+}
+
+.todoList {
+    /* Eliminates extra padding on the unordered list as required */
+    padding: 0;
+    /* Removes list item bullets as required */
+    list-style: none;
+    margin: 0;
+}
+
+.emptyState {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #718096;
+    font-style: italic;
+}
+
+.listHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.todoCount {
+    font-size: 0.875rem;
+    color: #718096;
+    font-weight: 500;
+}
