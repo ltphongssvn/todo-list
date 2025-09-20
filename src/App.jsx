@@ -1,13 +1,18 @@
-// src/App.jsx - Main App component refactored to use reducer pattern
+// src/App.jsx - Main App component with React Router implementation
 import { useState, useEffect, useCallback, useMemo, useReducer } from 'react';
+import { Routes, Route, useLocation } from 'react-router';
 import styles from './App.module.css';
-import { ErrorIcon } from './shared/Icons';
 import './App.css';
-import TodoList from './features/TodoList/TodoList';
-import TodoForm from './features/TodoForm';
-import TodosViewForm from './features/TodosViewForm';
 
-// Import reducer, actions, and initial state with aliases to avoid naming conflicts
+// Import Header component
+import Header from './shared/Header';
+
+// Import page components
+import TodosPage from './pages/TodosPage';
+import About from './pages/About';
+import NotFound from './pages/NotFound';
+
+// Import reducer, actions, and initial state
 import {
     reducer as todosReducer,
     actions as todoActions,
@@ -15,19 +20,36 @@ import {
 } from './reducers/todos.reducer';
 
 function App() {
-    // Replace multiple useState calls with single useReducer
-    // todoState now contains: { todoList, isLoading, isSaving, errorMessage }
+    // Reducer for todo state management
     const [todoState, dispatch] = useReducer(todosReducer, initialTodosState);
 
-    // Keep filter and sort state separate (not in reducer yet)
+    // Filter and sort state (not in reducer yet - could be stretch goal)
     const [filterOption, setFilterOption] = useState('all');
     const [sortOption, setSortOption] = useState('createdDate');
 
-    // Fetch todos on mount - now using dispatch instead of direct state setters
+    // Dynamic title based on current route
+    const location = useLocation();
+    const [title, setTitle] = useState('Todo List');
+
+    // Update title based on current path
+    useEffect(() => {
+        switch (location.pathname) {
+            case '/':
+                setTitle('Todo List');
+                break;
+            case '/about':
+                setTitle('About');
+                break;
+            default:
+                setTitle('Not Found');
+                break;
+        }
+    }, [location]);
+
+    // Fetch todos on mount
     useEffect(() => {
         const fetchTodos = async () => {
             try {
-                // Dispatch fetchTodos action to set isLoading to true
                 dispatch({ type: todoActions.fetchTodos });
 
                 const response = await fetch(`${import.meta.env.VITE_API_URL}`, {
@@ -43,20 +65,17 @@ function App() {
 
                 const data = await response.json();
 
-                // Dispatch loadTodos with records - reducer handles the mapping
                 dispatch({
                     type: todoActions.loadTodos,
                     records: data.records
                 });
 
             } catch (err) {
-                // Dispatch setLoadError with error object
                 dispatch({
                     type: todoActions.setLoadError,
                     error: err
                 });
             }
-            // Note: no finally block needed - reducer handles setting isLoading to false
         };
 
         fetchTodos();
@@ -65,7 +84,6 @@ function App() {
     // Add new todo - pessimistic UI pattern
     const addTodo = useCallback(async (title) => {
         try {
-            // Dispatch startRequest to set isSaving to true
             dispatch({ type: todoActions.startRequest });
 
             const response = await fetch(`${import.meta.env.VITE_API_URL}`, {
@@ -88,28 +106,23 @@ function App() {
 
             const data = await response.json();
 
-            // Dispatch addTodo with the new record
             dispatch({
                 type: todoActions.addTodo,
                 records: [data]
             });
 
         } catch (err) {
-            // Dispatch setLoadError to show error and reset loading states
             dispatch({
                 type: todoActions.setLoadError,
                 error: err
             });
         }
-        // Note: endRequest action would be dispatched here if needed separately
     }, []);
 
     // Update todo - optimistic UI pattern
     const updateTodo = useCallback(async (id, updates) => {
-        // Store original todo for potential revert
         const originalTodo = todoState.todoList.find(todo => todo.id === id);
 
-        // Optimistically update the todo immediately
         dispatch({
             type: todoActions.updateTodo,
             editedTodo: { id, ...updates }
@@ -131,10 +144,7 @@ function App() {
                 throw new Error('Failed to update todo');
             }
 
-            // Success - optimistic update stands (no action needed)
-
         } catch (err) {
-            // Revert to original todo on error
             dispatch({
                 type: todoActions.revertTodo,
                 editedTodo: originalTodo,
@@ -143,12 +153,10 @@ function App() {
         }
     }, [todoState.todoList]);
 
-    // Complete/Delete todo - optimistic UI pattern
+    // Complete todo - optimistic UI pattern
     const completeTodo = useCallback(async (id) => {
-        // Store original todo for potential revert
         const originalTodo = todoState.todoList.find(todo => todo.id === id);
 
-        // Optimistically remove the todo
         dispatch({
             type: todoActions.completeTodo,
             id: id
@@ -172,10 +180,7 @@ function App() {
                 throw new Error('Failed to complete todo');
             }
 
-            // Success - optimistic removal stands
-
         } catch (err) {
-            // Revert by adding the todo back
             dispatch({
                 type: todoActions.revertTodo,
                 editedTodo: originalTodo,
@@ -184,12 +189,10 @@ function App() {
         }
     }, [todoState.todoList]);
 
-    // Delete todo (if you have a separate delete function)
+    // Delete todo
     const deleteTodo = useCallback(async (id) => {
-        // Store original todo for potential revert
         const originalTodo = todoState.todoList.find(todo => todo.id === id);
 
-        // Optimistically remove the todo
         dispatch({
             type: todoActions.completeTodo,
             id: id
@@ -208,7 +211,6 @@ function App() {
             }
 
         } catch (err) {
-            // Revert by adding the todo back
             dispatch({
                 type: todoActions.revertTodo,
                 editedTodo: originalTodo,
@@ -217,77 +219,47 @@ function App() {
         }
     }, [todoState.todoList]);
 
-    // Memoized filtered and sorted todos
-    const filteredAndSortedTodos = useMemo(() => {
-        let filtered = todoState.todoList;
-
-        // Apply filter
-        if (filterOption === 'active') {
-            filtered = filtered.filter(todo => !todo.completed);
-        } else if (filterOption === 'completed') {
-            filtered = filtered.filter(todo => todo.completed);
-        }
-
-        // Apply sort
-        const sorted = [...filtered].sort((a, b) => {
-            if (sortOption === 'title') {
-                return sortOption === 'asc'
-                    ? a.title.localeCompare(b.title)
-                    : b.title.localeCompare(a.title);
-            } else if (sortOption === 'createdDate') {
-                return new Date(b.createdTime) - new Date(a.createdTime);
-            }
-            return 0;
-        });
-
-        return sorted;
-    }, [todoState.todoList, filterOption, sortOption]);
-
     return (
         <div className={styles.container}>
-            <header className={styles.header}>
-                <h1 className={styles.title}>Todo List</h1>
-            </header>
+            {/* Header with dynamic title and navigation */}
+            <Header title={title} />
 
-            {/* Error message with dismiss button */}
-            {todoState.errorMessage && (
-                <div className={styles.error}>
-                    <ErrorIcon />
-                    <span>{todoState.errorMessage}</span>
-                    <button
-                        onClick={() => dispatch({ type: todoActions.clearError })}
-                        className={styles.dismissButton}
-                    >
-                        Dismiss
-                    </button>
-                </div>
-            )}
+            {/* Main content area with routing */}
+            <main className={styles.main}>
+                <Routes>
+                    {/* Home route - Todo List */}
+                    <Route
+                        path="/"
+                        element={
+                            <TodosPage
+                                todoState={todoState}
+                                addTodo={addTodo}
+                                updateTodo={updateTodo}
+                                completeTodo={completeTodo}
+                                deleteTodo={deleteTodo}
+                                dispatch={dispatch}
+                                todoActions={todoActions}
+                                filterOption={filterOption}
+                                setFilterOption={setFilterOption}
+                                sortOption={sortOption}
+                                setSortOption={setSortOption}
+                            />
+                        }
+                    />
 
-            {/* Todo Form - pass isSaving from todoState */}
-            <TodoForm
-                onAddTodo={addTodo}
-                isSaving={todoState.isSaving}
-            />
+                    {/* About route */}
+                    <Route
+                        path="/about"
+                        element={<About />}
+                    />
 
-            {/* Filter and Sort Controls */}
-            <TodosViewForm
-                filterOption={filterOption}
-                onFilterChange={setFilterOption}
-                sortOption={sortOption}
-                onSortChange={setSortOption}
-            />
-
-            {/* Todo List - pass isLoading and todoList from todoState */}
-            {todoState.isLoading ? (
-                <div className={styles.loading}>Loading todos...</div>
-            ) : (
-                <TodoList
-                    todos={filteredAndSortedTodos}
-                    onUpdateTodo={updateTodo}
-                    onCompleteTodo={completeTodo}
-                    onDeleteTodo={deleteTodo}
-                />
-            )}
+                    {/* Catch-all route for 404 */}
+                    <Route
+                        path="*"
+                        element={<NotFound />}
+                    />
+                </Routes>
+            </main>
         </div>
     );
 }
